@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 /*
@@ -8,7 +9,7 @@
 - TerminationValue is the value at which the computation is complete
 - may assume TerminationValue >= Progress Indicator (*CurrentStatus) >= InitialValue
 */
-typedef struct {
+typedef struct Progress {
 long * CurrentStatus;
 long InitialValue;
 long TerminationValue;
@@ -35,18 +36,47 @@ representing the amount of progress that has been made
 /*
 - simple program which given a filename determines the number of words in the file
 - makefile should compile program to an executable file named wordcount
-- returns a long integer with the number of workds and takes a file descriptor or filename as input
+- returns a long integer with the number of words and takes a file descriptor or filename as input
 - wordcount will spawn a progress_monitor thread with a populated PROGRESS_STATUS structure as the argument
 */
 long wordcount(char filename[])
 {
+    FILE *file;
+    char c;
+    long totalWords = 0;
+    file = fopen(filename, "r");
+    if(file==NULL) 
+     { 
+         printf("Could not open file"); 
+     } 
+    else 
+    {
+        c = fgetc(file);
+        while(c!=EOF)
+        {
+            if(c==' ' || c=='\n')
+            {
+                totalWords++;
+            }
+            c = fgetc(file); 
+        }
 
+    } 
+    fclose(file);
+    return totalWords;
 }
 
 //takes a command line argument of the filename to be counted
 //main calls wordcount function
 int main (int argc, char** argv)
 {
+    //example on how to initalize struct
+    //struct Progress PROGRESS_STATUS = {0, 0, 50};
+    //example on how to access structs
+    //PROGRESS_STATUS.CurrentStatus = 0
+    long count = 0;
+    count = wordcount(argv[1]);
+    printf("%ld", count);
 
 }
 
