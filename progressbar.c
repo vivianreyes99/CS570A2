@@ -31,12 +31,11 @@ representing the amount of progress that has been made
 - read A2 pdf for examples and more in depth info
 - Request that they be printed immediately by using fflush(stdout)
 */	
+
 void * progress_monitor(void * progStatus)
 {
     //this is where we will print the progress bar
     //remember to use fflush(stdout)
-
-
 }
 
 /*
@@ -47,6 +46,9 @@ void * progress_monitor(void * progStatus)
 */
 long wordcount(char filename[])
 {
+    //example on how to initalize struct
+    struct Progress PROGRESS_STATUS;
+
     FILE *file;
     char c;
     long totalWords = 0;
@@ -71,28 +73,20 @@ long wordcount(char filename[])
     fclose(file);
     //printf("There are " + totalWords + "words in file");
     return totalWords;
-}
-
-//takes a command line argument of the filename to be counted
-//main calls wordcount function
-int main (int argc, char** argv)
-{
-    long count = 0;
-    count = wordcount(argv[1]);
-    //example on how to initalize struct
-    struct Progress PROGRESS_STATUS = {0, 0, count};
-    //example on how to access structs
-    //PROGRESS_STATUS.CurrentStatus = 0
     
-    printf("%ld", count);
+    //Note: how do we know what currentstatus is if we don't know the total number of words yet
+    //do we call wordcount first?
+    //CurrentStatus;
+    //InitialValue;
+    //termination value is number of bytes in a file
+    //long TerminationValue;
 
-    //thread id
+     //thread id
     pthread_t thread_id;
 
     //Create attributes
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-
 
     //creates thread, Nulls are the defult, i think we pass the struct into one of the NULL arguments
     //1st argument: pointer to thread1 which is set by this function
@@ -103,8 +97,15 @@ int main (int argc, char** argv)
     //join functions for threads is the equivalent to wait() for processes
     pthread_join(thread_id, NULL);
     pthread_exit(NULL);
+}
 
-
+//takes a command line argument of the filename to be counted
+//main calls wordcount function
+int main (int argc, char** argv)
+{
+    long count = 0;
+    count = wordcount(argv[1]);
+    printf("%ld", count);
 }
 
 
