@@ -3,7 +3,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/stat.h>
-
 /*
 - Current status is a pointer to a long which represents the current status of the computation being tracked
 (note: will need to typecast the argument in the functiom to be able to access memeber fields of this struct)
@@ -12,7 +11,7 @@
 - TerminationValue is the value at which the computation is complete, number of bytes in file
 - may assume TerminationValue >= Progress Indicator (*CurrentStatus) >= InitialValue
 */
-typedef struct Progress {
+typedef struct {
 long * CurrentStatus;
 long InitialValue;
 long TerminationValue;
@@ -46,36 +45,26 @@ void * progress_monitor(void * progStatus)
     //https://stackoverflow.com/questions/20480529/thread-struct-as-function-parameter-c/20481075
     // https://community.arm.com/developer/tools-software/tools/f/keil-forum/25497/void-pointer-to-struct-pointer-cast
 
-    /*
-    Progress data;
-    data = (struct Progress*) progStatus;
-    */
-
-   //PROGRESS_STATUS *data = (PROGRESS_STATUS*) progStatus;
-
-   /*assuming your variable in the parameter is progStatus you should initialize your pointer as such 
-    PROGRESS_STATUS *statusptr = (PROGRESS_STATUS)* progStatus;
-
-    then to pass it to the struct variables where status/termination is a number
-status = *statusptr->CurrentStatus
-termination = statptr->TerminationValue */
-   /*
-   PROGRESS_STATUS *statusptr = (PROGRESS_STATUS)* progStatus;
+   
+   PROGRESS_STATUS *statusptr = (PROGRESS_STATUS*) progStatus;
    long currentStat = *statusptr->CurrentStatus;
    long termination = statusptr->TerminationValue;
-*/
 
-
-
-    //this example runs without errors
+    /*this example runs without errors
    struct Progress *PROGRESS_STATUS = progStatus;
    long termination = PROGRESS_STATUS -> TerminationValue;
-   long currentStat = *PROGRESS_STATUS -> CurrentStatus;
+   long currentStat = PROGRESS_STATUS -> CurrentStatus;
+   */
    
 
-   printf("%ld", termination);
    printf("%ld", currentStat);
-   
+   fflush(stdout);
+   printf("\n");
+   fflush(stdout);
+   printf("%ld", termination);
+   fflush(stdout);
+   printf("\n");
+   fflush(stdout);
     
     //long termination = (PROGRESS_STATUS *) progStatus -> CurrentStatus;
     
@@ -85,7 +74,7 @@ termination = statptr->TerminationValue */
     long percentComplete = currentStat/termination * 100;
     //long markers = percentComplete * 50;
     
-    long increment = 0.02 * termination; // 1/50th of termination value
+    float increment = 0.02 * termination; // 1/50th of termination value
     int trackIncrement = 0;
     int trackPlus = 0;
     // need tracking variable so that when it = x, then print bars
@@ -106,6 +95,7 @@ termination = statptr->TerminationValue */
         }
         trackPlus++;
     }
+    return NULL;
 }
 
 
@@ -113,20 +103,28 @@ termination = statptr->TerminationValue */
 - simple program which given a filename determines the number of words in the file
 - returns a long integer with the number of words and takes a file descriptor or filename as input
 - wordcount will spawn a progress_monitor thread with a populated PROGRESS_STATUS structure as the argument
+- https://overiq.com/c-programming-101/pointers-as-structure-member-in-c/
+https://aticleworld.com/pointer-inside-a-structure/
 */
-long wordcount(char filename[], int byteSize)
+long wordcount(char filename[], long byteSize)
 {
     //example on how to initalize struct
-    struct Progress *PROGRESS_STATUS = malloc(sizeof(PROGRESS_STATUS));
+    /*struct Progress *PROGRESS_STATUS = malloc(sizeof(PROGRESS_STATUS));
 
-    // put info into struct 
     PROGRESS_STATUS -> TerminationValue = byteSize;
     PROGRESS_STATUS -> InitialValue = 0;
-    PROGRESS_STATUS -> CurrentStatus = 0;
+    *PROGRESS_STATUS -> CurrentStatus = 0;
+    */
+
+    PROGRESS_STATUS *data = NULL;
+    data = malloc(sizeof(PROGRESS_STATUS));
+    // put info into struct 
+    data->CurrentStatus = malloc(sizeof(data->CurrentStatus));
+    data->TerminationValue = byteSize;
+    
 
     FILE *file;
     char c;
-    long totalWords = 0;
     file = fopen(filename, "r");
 
      //thread id
@@ -142,10 +140,9 @@ long wordcount(char filename[], int byteSize)
     //3rd argument: name of function to be executed for the thread to be created
     //4th argument: used to pass arguments to the function, progress_monitor (so probably the struct)
     //join functions for threads is the equivalent to wait() for processes
-    pthread_join(thread_id, NULL);
 
+    long totalWords = 0;
     long currentBytes = 0;
-
 
     if(file==NULL) 
     { 
@@ -156,9 +153,10 @@ long wordcount(char filename[], int byteSize)
         //off by one byte
         c = fgetc(file);
         currentBytes++;
-        PROGRESS_STATUS -> CurrentStatus = currentBytes;
-        
-        pthread_create(&thread_id, NULL, progress_monitor, (void *) &PROGRESS_STATUS);
+        data -> CurrentStatus = currentBytes;
+        fflush(stdout);
+
+        pthread_create(&thread_id, NULL, progress_monitor, (void *) &data);
         while(c != EOF)
         {
             if(c==' ' || c=='\n')
@@ -169,13 +167,10 @@ long wordcount(char filename[], int byteSize)
             c = fgetc(file); 
             //  
             currentBytes++;
-            PROGRESS_STATUS -> CurrentStatus = currentBytes;
+            data -> CurrentStatus = currentBytes;
         }
-        printf("%ld" , currentBytes);
-    } 
-
-    
-    printf("%ld", totalWords);
+    }
+    pthread_join(thread_id, NULL);
     pthread_exit(NULL);
     fclose(file);
     return totalWords;
@@ -189,23 +184,18 @@ int main (int argc, char** argv)
     struct stat buf;  
 
     stat("test.txt", &buf);
-    int size = buf.st_size;
+    long size = buf.st_size;
     
     wordcount("test.txt", size);
     return 0;
 }
 
-
-/*
-- Meeting 2/19
-    - need to figure out how to work with pointers 
-    - how to access the struct with pointers in the progress_monitor function
-    - need to test if currentstatus is getting updated in the pthread when it's getting updated in the while loop in wordcount
-    - figure out how and when to call pthread_create in wordcount
-    - test math for printing progress bar
-    - 
-*/
-
+//why is termination printing memory address (we think)
+//why is currentstatus printing 73 in progress_monitor 
+//seems like it doesnt reach progress_monitor function until end of wordcount function?)
+//recheck our math for printing
+//maybe figure out debugging
+//watch out for floats/long issue
 
 
 
