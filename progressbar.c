@@ -33,12 +33,9 @@ representing the amount of progress that has been made
 - Request that they be printed immediately by using fflush(stdout)
 */	
 
-/*
+
 void * progress_monitor(void * progStatus)
 {
-    //this is where we will print the progress bar
-    //remember to use fflush(stdout)
-
     // currentStatus/terminationValue * 100 = percent completed
     // percent completed (in decimal) * 50 = num of progress markers printed
     // need to find 1/50th of termination value, x
@@ -46,18 +43,56 @@ void * progress_monitor(void * progStatus)
     // so we need to increment trackx everytime idk
     //https://roch.sdsu.edu/faq/os-faq-answers.shtml#pthreads
     //https://stackoverflow.com/questions/20196121/passing-struct-to-pthread-as-an-argument
+    //https://stackoverflow.com/questions/20480529/thread-struct-as-function-parameter-c/20481075
+    // https://community.arm.com/developer/tools-software/tools/f/keil-forum/25497/void-pointer-to-struct-pointer-cast
+
+    /*
+    Progress data;
+    data = (struct Progress*) progStatus;
+    */
+
+   //PROGRESS_STATUS *data = (PROGRESS_STATUS*) progStatus;
+
+   /*assuming your variable in the parameter is progStatus you should initialize your pointer as such 
+    PROGRESS_STATUS *statusptr = (PROGRESS_STATUS)* progStatus;
+
+    then to pass it to the struct variables where status/termination is a number
+status = *statusptr->CurrentStatus
+termination = statptr->TerminationValue */
+   /*
+   PROGRESS_STATUS *statusptr = (PROGRESS_STATUS)* progStatus;
+   long currentStat = *statusptr->CurrentStatus;
+   long termination = statusptr->TerminationValue;
+*/
 
 
-    long x;
-    // x = (long *) progStatus->InitialValue;
-    x = .94;
-    int trackX;
-    int trackPlus;
+
+    //this example runs without errors
+   struct Progress *PROGRESS_STATUS = progStatus;
+   long termination = PROGRESS_STATUS -> TerminationValue;
+   long currentStat = *PROGRESS_STATUS -> CurrentStatus;
+   
+
+   printf("%ld", termination);
+   printf("%ld", currentStat);
+   
+    
+    //long termination = (PROGRESS_STATUS *) progStatus -> CurrentStatus;
+    
+    //long termination = data -> TerminationValue;
+    //long currentStat = data -> CurrentStatus;
+    
+    long percentComplete = currentStat/termination * 100;
+    //long markers = percentComplete * 50;
+    
+    long increment = 0.02 * termination; // 1/50th of termination value
+    int trackIncrement = 0;
+    int trackPlus = 0;
     // need tracking variable so that when it = x, then print bars
-    while(currentStatus <= terminationValue)
+    while(currentStat <= termination)
     {
-        trackX++;
-        if (trackX >= x) // if trackBar == 1/50 of termination value, it prints one "-"
+        trackIncrement++;
+        if (trackIncrement >= increment) // if trackBar == 1/50 of termination value, it prints one "-"
         {
             if (trackPlus == 10) // if it is the tenth "-" , print a "+"
             {
@@ -67,30 +102,27 @@ void * progress_monitor(void * progStatus)
             }
             printf("-");
             fflush(stdout);
-            trackX = 0;
+            trackIncrement = 0;
         }
         trackPlus++;
     }
 }
-*/
-
 
 
 /*
 - simple program which given a filename determines the number of words in the file
-- makefile should compile program to an executable file named wordcount
 - returns a long integer with the number of words and takes a file descriptor or filename as input
 - wordcount will spawn a progress_monitor thread with a populated PROGRESS_STATUS structure as the argument
 */
 long wordcount(char filename[], int byteSize)
 {
     //example on how to initalize struct
-    struct Progress PROGRESS_STATUS;
-    
+    struct Progress *PROGRESS_STATUS = malloc(sizeof(PROGRESS_STATUS));
+
     // put info into struct 
-    PROGRESS_STATUS.TerminationValue = byteSize;
-    PROGRESS_STATUS.InitialValue = 0;
-    PROGRESS_STATUS.CurrentStatus = 0;
+    PROGRESS_STATUS -> TerminationValue = byteSize;
+    PROGRESS_STATUS -> InitialValue = 0;
+    PROGRESS_STATUS -> CurrentStatus = 0;
 
     FILE *file;
     char c;
@@ -106,7 +138,7 @@ long wordcount(char filename[], int byteSize)
 
     //creates thread, Nulls are the defult, i think we pass the struct into one of the NULL arguments
     //1st argument: pointer to thread1 which is set by this function
-    //2nd argument: specifies attricutes, if val is NULL then defualt attributes shall be used
+    //2nd argument: specifies attributes, if val is NULL then defualt attributes shall be used
     //3rd argument: name of function to be executed for the thread to be created
     //4th argument: used to pass arguments to the function, progress_monitor (so probably the struct)
     //join functions for threads is the equivalent to wait() for processes
@@ -115,17 +147,17 @@ long wordcount(char filename[], int byteSize)
     long currentBytes = 0;
 
     if(file==NULL) 
-     { 
+    { 
          printf("Could not open file"); 
-     } 
+    } 
     else 
     {
         //off by one byte
         c = fgetc(file);
         currentBytes++;
-        PROGRESS_STATUS.CurrentStatus = currentBytes;
+        PROGRESS_STATUS -> CurrentStatus = currentBytes;
         
-        //pthread_create(&thread_id, NULL, progress_monitor, (void *) &PROGRESS_STATUS);
+        pthread_create(&thread_id, NULL, progress_monitor, (void *) &PROGRESS_STATUS);
         while(c != EOF)
         {
             if(c==' ' || c=='\n')
@@ -136,18 +168,15 @@ long wordcount(char filename[], int byteSize)
             c = fgetc(file); 
             //  
             currentBytes++;
-            PROGRESS_STATUS.CurrentStatus = currentBytes;
+            PROGRESS_STATUS -> CurrentStatus = currentBytes;
         }
-        printf("%ld" ,currentBytes);
-        printf("\n");
-
-
+        printf("%ld" , currentBytes);
     } 
 
+    
+    printf("%ld", totalWords);
     pthread_exit(NULL);
-
     fclose(file);
-    //printf("There are " + totalWords + "words in file");
     return totalWords;
 }
 
@@ -160,8 +189,9 @@ int main (int argc, char** argv)
 
     stat(argv[1], &buf);
     int size = buf.st_size;
-
+    
     wordcount(argv[1], size);
+    return 0;
 }
 
 
