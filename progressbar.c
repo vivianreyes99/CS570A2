@@ -146,6 +146,7 @@ long wordcount(char filename[], int byteSize)
 
     long currentBytes = 0;
 
+
     if(file==NULL) 
     { 
          printf("Could not open file"); 
@@ -187,10 +188,10 @@ int main (int argc, char** argv)
     // use stat to get number of bytes in file
     struct stat buf;  
 
-    stat(argv[1], &buf);
+    stat("test.txt", &buf);
     int size = buf.st_size;
     
-    wordcount(argv[1], size);
+    wordcount("test.txt", size);
     return 0;
 }
 
