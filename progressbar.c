@@ -46,9 +46,19 @@ void * progress_monitor(void * progStatus)
     // https://community.arm.com/developer/tools-software/tools/f/keil-forum/25497/void-pointer-to-struct-pointer-cast
 
    
-   PROGRESS_STATUS *statusptr = (PROGRESS_STATUS*) progStatus;
-   long currentStat = *statusptr->CurrentStatus;
-   long termination = statusptr->TerminationValue;
+   //PROGRESS_STATUS *statusptr = (PROGRESS_STATUS*) progStatus;
+
+   //typecast the void pointer to a PROGRESS_STATUS pointer
+
+   PROGRESS_STATUS *progStat = (PROGRESS_STATUS *) progStatus;
+
+   long currentStat = *progStat -> CurrentStatus;
+   long termVal = progStat -> TerminationValue;
+
+   //long currentStat = *((PROGRESS_STATUS *) progStatus)->CurrentStatus;
+
+   //long currentStat = *statusptr->CurrentStatus;
+   //long termination = ((PROGRESS_STATUS *) progStatus)->TerminationValue;
 
     /*this example runs without errors
    struct Progress *PROGRESS_STATUS = progStatus;
@@ -56,14 +66,14 @@ void * progress_monitor(void * progStatus)
    long currentStat = PROGRESS_STATUS -> CurrentStatus;
    */
    
+   //long curr_progress = (currentStat *50)/termination;
+   //printf("%ld\n", curr_progress);
+   //fflush(stdout);
 
-   printf("%ld", currentStat);
+   printf("%ld\n", currentStat);
+   //printf("\n");
    fflush(stdout);
-   printf("\n");
-   fflush(stdout);
-   printf("%ld", termination);
-   fflush(stdout);
-   printf("\n");
+   printf("%ld\n", progStat -> TerminationValue);
    fflush(stdout);
     
     //long termination = (PROGRESS_STATUS *) progStatus -> CurrentStatus;
@@ -71,19 +81,21 @@ void * progress_monitor(void * progStatus)
     //long termination = data -> TerminationValue;
     //long currentStat = data -> CurrentStatus;
     
-    long percentComplete = currentStat/termination * 100;
+    //long percentComplete = currentStat/termVal * 100;
     //long markers = percentComplete * 50;
     
-    float increment = 0.02 * termination; // 1/50th of termination value
-    int trackIncrement = 0;
+    float increment = 0.02 * termVal; // 1/50th of termination value, for test.txt, it is 1.44
+    int trackBar = 0;
     int trackPlus = 0;
     // need tracking variable so that when it = x, then print bars
-    while(currentStat <= termination)
+    while(currentStat <= termVal) // loop until it reaches the last byte
     {
-        trackIncrement++;
-        if (trackIncrement >= increment) // if trackBar == 1/50 of termination value, it prints one "-"
+        //printf("%ld", currentStat);
+        //trackIncrement++;
+        // when it has completed 1/50th of the task, it will print one "-"
+        if (trackBar >= increment) // when trackIncrement == 1/50 of termination value, it prints one "-"
         {
-            if (trackPlus == 10) // if it is the tenth "-" , print a "+"
+            if (trackPlus == 9) // if it is the tenth "-" , print a "+"
             {
                 printf("+");
                 fflush(stdout);
@@ -91,9 +103,10 @@ void * progress_monitor(void * progStatus)
             }
             printf("-");
             fflush(stdout);
-            trackIncrement = 0;
+            trackBar = 0;
+            trackPlus++;
         }
-        trackPlus++;
+        trackBar++;
     }
     return NULL;
 }
@@ -110,7 +123,6 @@ long wordcount(char filename[], long byteSize)
 {
     //example on how to initalize struct
     /*struct Progress *PROGRESS_STATUS = malloc(sizeof(PROGRESS_STATUS));
-
     PROGRESS_STATUS -> TerminationValue = byteSize;
     PROGRESS_STATUS -> InitialValue = 0;
     *PROGRESS_STATUS -> CurrentStatus = 0;
@@ -122,17 +134,21 @@ long wordcount(char filename[], long byteSize)
     data->CurrentStatus = malloc(sizeof(data->CurrentStatus));
     data->TerminationValue = byteSize;
     
+    printf("term value in wordcount: ");
+    printf("%ld", data->TerminationValue);
+    printf("\n");
 
     FILE *file;
     char c;
-    file = fopen(filename, "r");
+    //file = fopen(filename, "r");
+    file = fopen("test.txt", "r");
 
-     //thread id
+    //thread id
     pthread_t thread_id;
 
     //Create attributes
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
+    //pthread_attr_t attr;
+    //pthread_attr_init(&attr);
 
     //creates thread, Nulls are the defult, i think we pass the struct into one of the NULL arguments
     //1st argument: pointer to thread1 which is set by this function
@@ -144,6 +160,8 @@ long wordcount(char filename[], long byteSize)
     long totalWords = 0;
     long currentBytes = 0;
 
+    pthread_create(&thread_id, NULL, progress_monitor, (void *) &data);
+
     if(file==NULL) 
     { 
          printf("Could not open file"); 
@@ -153,10 +171,10 @@ long wordcount(char filename[], long byteSize)
         //off by one byte
         c = fgetc(file);
         currentBytes++;
-        data -> CurrentStatus = currentBytes;
-        fflush(stdout);
+        *(data -> CurrentStatus) = currentBytes;
+        //fflush(stdout);
 
-        pthread_create(&thread_id, NULL, progress_monitor, (void *) &data);
+        //pthread_create(&thread_id, NULL, progress_monitor, (void *) &data);
         while(c != EOF)
         {
             if(c==' ' || c=='\n')
@@ -171,7 +189,7 @@ long wordcount(char filename[], long byteSize)
         }
     }
     pthread_join(thread_id, NULL);
-    pthread_exit(NULL);
+    //pthread_exit(NULL);
     fclose(file);
     return totalWords;
 }
@@ -185,8 +203,8 @@ int main (int argc, char** argv)
 
     stat("test.txt", &buf);
     long size = buf.st_size;
-    
-    wordcount("test.txt", size);
+
+    wordcount(argv[1], size);
     return 0;
 }
 
@@ -196,6 +214,3 @@ int main (int argc, char** argv)
 //recheck our math for printing
 //maybe figure out debugging
 //watch out for floats/long issue
-
-
-
