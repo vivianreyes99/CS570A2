@@ -1,3 +1,24 @@
+/* 
+ * CS 570
+ * Professor Roch
+ * Assignment 2: Wordcount/ProgressBar
+ * This program uses POSIX threads
+ * This program takes in a file specifed by the user and counts the number of words in that file
+ * A progress bar prints out while the main thread, wordcount, is counting the number of words.
+ * After the progress bar is complete, the program will print out the number of words in the file specified
+ * 
+ * 
+ *
+ * We the undersigned promise that we have in good faith attempted to follow the principles of 
+ * pair programming. Although we were free to discuss ideas with others, the implementation is 
+ * our own. We have shared a common workspace and taken turns at the keyboard for the majority
+ * of the work that we are submitting. Furthermore, any non programming portions of the
+ * assignment were done independently. We recognize that should this not be the case, we will
+ * be subject to penalties as outlined in the course syllabus.
+ * Anoodnya Sangam
+ * Vivian Reyes
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -10,13 +31,14 @@ long InitialValue;
 long TerminationValue;
 } PROGRESS_STATUS;
 
-
 void * progress_monitor(void * progStatus)
 {
     //typecast the void pointer to a PROGRESS_STATUS pointer
     PROGRESS_STATUS *progStat = (PROGRESS_STATUS *) progStatus;
 
+    //termination is the fileSize that is being computed
     float termination = progStat->TerminationValue - progStat->InitialValue;
+    //tracking current percent complete of wordcount with currentPercent
     int currentPercent = 0;
     int perviousPercent = 0;
     int difference = 0;
@@ -29,7 +51,8 @@ void * progress_monitor(void * progStatus)
         if(currentPercent > perviousPercent)
         {
             perviousPercent = currentPercent;
-            for(int i = 0; i < difference; i++)
+            int i;
+            for(i = 0; i < difference; i++)
             {
                if (trackPlus == 9) 
                 {
@@ -54,7 +77,7 @@ long wordcount(char filename[], long byteSize)
     FILE *file;
     char c;
     char prevC;
-    file = fopen(filename, "r");
+    file = fopen(filename, "r"); 
  
     long totalWords = 0;
     long currentBytes = 0;
@@ -76,7 +99,7 @@ long wordcount(char filename[], long byteSize)
         currentBytes++;
         // if current char is a space, newline, or tab 
         // and previous char was not also a space, newline, or tab
-        if ( (c ==' ' || c =='\n' || c == '\t') &&  prevC != ' ' && prevC != '\n' && prevC != '\t')
+        if ( (c ==' ' || c =='\n' || c == '\t') &&  prevC != ' ' && prevC != '\n' && prevC != '\t' && prevC != '\0')
         {
             totalWords++;
         }
@@ -85,7 +108,7 @@ long wordcount(char filename[], long byteSize)
         c = fgetc(file); 
     }
 
-    if (c == EOF)
+    if (c == EOF && prevC != ' ' && prevC != '\n' && prevC != '\t')
     {
         totalWords++;
     } 
@@ -96,36 +119,52 @@ long wordcount(char filename[], long byteSize)
     return totalWords;
 }
  
-//takes a command line argument of the filename to be counted
-//main calls wordcount function
+//main takes a command line argument of the filename, 
+//calls wordcount to count total number of words of file specified
 int main (int argc, char** argv)
 {
     // use stat to get number of bytes in file
     struct stat buf;  
- 
     stat(argv[1], &buf);
-    long size = buf.st_size;
+    long byteSize = buf.st_size;
     long totalWords = 0;
+    //sets file relative path to char pointer path
     char *path = realpath(argv[1], NULL);
 
+    FILE *file;
+    char c;
+    char prevC;
+    file = fopen(argv[1], "r"); 
+
+    //if user did not enter a file, print error messege
     if(argv[1]==NULL) 
     { 
         printf("no file specified"); 
-        fflush(stdout);
+        printf("\n");
+        return;
     } 
+
+    if(file==NULL) 
+    { 
+         printf("could not open file"); 
+         printf("\n");
+         return;
+
+    }
+
  
-    totalWords = wordcount(argv[1], size);
-    // bigFile has 2191390 words. 13234244 bytes
+    //calling wordcount, returns a long and placing that into totalWords var.
+    //pass byteSize into wordCount, this is used later for TerminationValue
+    totalWords = wordcount(argv[1], byteSize);
     
+    //print out total number of words with file path
     printf("\n");
-    printf("There are ");
-    fflush(stdout);
+    printf("There are " );
     printf ("%ld", totalWords);
-    fflush(stdout);
     printf(" words in ");
-    fflush(stdout);
-    printf("%s", path);
-    fflush(stdout);
+    printf("%s", argv[1]);
+    printf(".");
+    printf("\n");
     return 0;
 }
 

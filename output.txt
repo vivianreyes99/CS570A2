@@ -1,11 +1,15 @@
-PS /Users/apple/CS570_Assignment2/CS570A2> .\wordcount bigFile.txt
+[cssc3336@edoras a2]$ make      
+gcc -c wordcount.c -lpthread -o wordcount.o
+gcc -g wordcount.o -lpthread -o wordcount
+[cssc3336@edoras a2]$ wordcount test.txt
 ---------+---------+---------+---------+---------+
-There are 2191390 words in /Users/apple/CS570_Assignment2/CS570A2/bigFile.txt
-PS /Users/apple/CS570_Assignment2/CS570A2> wc bigFile.txt
-  256913 2191390 12977331 bigFile.txt
-PS /Users/apple/CS570_Assignment2/CS570A2> .\wordcount test.txt   
+There are 16 words in test.txt.
+[cssc3336@edoras a2]$ wc test.txt
+ 5 16 68 test.txt
+[cssc3336@edoras a2]$ wordcount ~bshen/cs570/a2/big.txt
 ---------+---------+---------+---------+---------+
-There are 17 words in /Users/apple/CS570_Assignment2/CS570A2/test.txt
-PS /Users/apple/CS570_Assignment2/CS570A2> wc test.txt
-       3      17      71 test.txt
-PS /Users/apple/CS570_Assignment2/CS570A2> 
+There are 1095695 words in /home/cs/faculty/bshen/cs570/a2/big.txt.
+[cssc3336@edoras a2]$ wc ~bshen/cs570/a2/big.txt
+ 128457 1095695 6488666 /home/cs/faculty/bshen/cs570/a2/big.txt
+[cssc3336@edoras a2]$ wordcount
+no file specified
