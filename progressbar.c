@@ -31,58 +31,54 @@ representing the amount of progress that has been made
 - read A2 pdf for examples and more in depth info
 - Request that they be printed immediately by using fflush(stdout)
 */  
- 
- 
 void * progress_monitor(void * progStatus)
 {
-
     //typecast the void pointer to a PROGRESS_STATUS pointer
     PROGRESS_STATUS *progStat = (PROGRESS_STATUS *) progStatus;
-    printf("TerminationValue: ");
-    printf("%ld\n", (progStat -> TerminationValue)); 
-    printf("Current Status: ");
-    printf("%ld\n", (*progStat -> CurrentStatus));
 
-    // while currstatus < term value, if percent complete increased by 2% of the term value, print a "-"
-
-    // 1/50th of termination value, for test.txt, it is 1.44
-    long increment = 0.02 * (progStat -> TerminationValue);
+    
     long previousPercent = 0;
-
-    printf("Increment: ");
-    printf("%ld\n", increment); 
+     // 1/50th of termination value 
+    long increment = 0;
+    
 
     int trackPlus = 0;
-
-    long percentComplete = (*progStat -> CurrentStatus)/(progStat -> TerminationValue)*100;
-    long difference = percentComplete - previousPercent;
-    long trackBar = difference / increment;
-    printf("Percent Complete: ");
-    printf("%ld\n", percentComplete); 
-    printf("Difference of current and pervious percent: ");
-    printf("%ld\n", difference); 
-    printf("TrackBar ");
-    printf("%ld\n", trackBar);
-    // need tracking variable so that when it = x, then print bars
+    //tracks current percent complete of wordcount function
+    long percentComplete = 0;
+    //the difference betwwen the current percent complete with the percious percent complete
+    long difference = 0;
+    ////number of hyphens to print each loop
+    //long trackBar = difference / increment;
+   
+    long trackBar = 0;
  
     //check current percent complete with last percent complete and from there determine how many
-    //more dashes to print
+    //more dashes to print (from Roch's office hours)
     
     // when it has completed 1/50th of the task, it will print one "-""
     while((*progStat -> CurrentStatus) < (progStat -> TerminationValue))
     {
-        long percentComplete = (*progStat -> CurrentStatus)/(progStat -> TerminationValue) * 100;
-        long difference = percentComplete - previousPercent;
-        long trackBar = difference / increment; //number of hyphens/bars to print
-        if (difference >= increment) // when trackIncrement == 1/50 of termination value, it prints one "-"
+        increment = 0.02 * (progStat -> TerminationValue);
+        
+        //tracks current percent complete of wordcount function
+        percentComplete = (*progStat -> CurrentStatus)/(progStat -> TerminationValue) * 100;
+        //the difference betwwen the current percent complete with the percious percent complete
+        difference = percentComplete - previousPercent;
+        //number of hyphens to print each loop
+        trackBar = difference / increment; 
+
+        //if the differences between current percent complete and pervious percent 
+        //is greater than the increment value (the value of each hyphen) then enter loop
+        if (difference >= increment) 
         {
-            long trackBar = difference / increment; // trackBar is the number of dashes to print
+            //loop runs trackBar times, trackBar is the number of hyphens to print per loop
             for (int i = 0; i < trackBar; i++)
             {
                 printf("-");
                 fflush(stdout);
                 trackPlus++;
-                if (trackPlus == 9) // if it is the tenth "-" , print a "+"
+                // if it is the tenth "-" , print a "+"
+                if (trackPlus == 9) 
                 {
                     printf("+");
                     fflush(stdout);
@@ -91,7 +87,6 @@ void * progress_monitor(void * progStatus)
             }
         }
         previousPercent = percentComplete;
-
     }
     pthread_exit(NULL);
 }
@@ -104,17 +99,14 @@ void * progress_monitor(void * progStatus)
 */
 long wordcount(char filename[], long byteSize)
 {
-
     PROGRESS_STATUS *data = NULL;
     data = malloc(sizeof(PROGRESS_STATUS));
     // put info into struct 
-    data->CurrentStatus = malloc(sizeof(data->CurrentStatus));
     data->TerminationValue = byteSize;
 
     FILE *file;
     char c;
     char prevC;
-    //file = fopen(filename, "r");
     file = fopen(filename, "r");
  
     //thread id
@@ -124,7 +116,8 @@ long wordcount(char filename[], long byteSize)
     long currentBytes = 0;
  
     pthread_create(&thread_id, NULL, progress_monitor, (void *) data);
- 
+    //*(data -> CurrentStatus) = &currentBytes;
+
     if(filename==NULL) 
     { 
          printf("Could not open file"); 
@@ -134,7 +127,7 @@ long wordcount(char filename[], long byteSize)
         //off by one byte
         c = fgetc(file);
         currentBytes++;
-        *(data -> CurrentStatus) = currentBytes;
+        data->CurrentStatus = &currentBytes;
         
         while(c != EOF)
         {
@@ -144,11 +137,10 @@ long wordcount(char filename[], long byteSize)
             {
                 totalWords++;
             }
-            //one byte at a time
+            //fgetc() takes in one byte at a time
             prevC = c;
             c = fgetc(file); 
             currentBytes++;
-            *(data -> CurrentStatus) = currentBytes;
         }
 
         if (c == EOF) // increment 
@@ -176,8 +168,7 @@ int main (int argc, char** argv)
     stat(argv[1], &buf);
     long size = buf.st_size;
  
-    long words = wordcount(argv[1], size);
- 
+    wordcount(argv[1], size);
     // bigFile has 2191390 words. 13234244 bytes
     return 0;
 }
