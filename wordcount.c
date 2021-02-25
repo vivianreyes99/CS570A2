@@ -74,14 +74,16 @@ void * progress_monitor(void * progStatus)
 
 long wordcount(char filename[], long byteSize)
 {
+    // create and open file for reading
     FILE *file;
     char c;
     char prevC;
     file = fopen(filename, "r"); 
  
-    long totalWords = 0;
-    long currentBytes = 0;
+    long totalWords = 0; // keeps count of the total words in file
+    long currentBytes = 0; // keeps count of the total bytes (chars)
 
+    // assign values to struct progStat, that holds all the information about the file
     PROGRESS_STATUS progStat;
     progStat.CurrentStatus = &currentBytes;
     progStat.InitialValue = 0;
@@ -89,31 +91,31 @@ long wordcount(char filename[], long byteSize)
 
     pthread_t thread_id;
 
+    // creates separate thread to run the progress_monitor function
+    // which updates the progress bar as the words are counted
     pthread_create(&thread_id, NULL, progress_monitor, (void*) &progStat);
 
-    //off by one byte
-    c = fgetc(file);
+    c = fgetc(file); // read one byte at a time
         
-    while(c != EOF)
+    while(c != EOF) // loop through file until it reaches the EOF, and update the struct with info
     {
         currentBytes++;
-        // if current char is a space, newline, or tab 
-        // and previous char was not also a space, newline, or tab
+        // if current char is whitespace, and previous char was NOT whitespace, increment words
         if ( (c ==' ' || c =='\n' || c == '\t') &&  prevC != ' ' && prevC != '\n' && prevC != '\t' && prevC != '\0')
         {
             totalWords++;
         }
-        //fgetc takes in one byte at a time
-        prevC = c;
-        c = fgetc(file); 
+        prevC = c; // set prev char to current char, to be able to check in the next loop
+        c = fgetc(file); // read next char
     }
 
+    // if it reaches the EOF, and the prev char was not whitespace, increment words
     if (c == EOF && prevC != ' ' && prevC != '\n' && prevC != '\t')
     {
         totalWords++;
     } 
  
-    pthread_join(thread_id, NULL);
+    pthread_join(thread_id, NULL); //  wait til progress monitor function is done running to return to main
     fclose(file);
     
     return totalWords;
@@ -128,9 +130,8 @@ int main (int argc, char** argv)
     stat(argv[1], &buf);
     long byteSize = buf.st_size;
     long totalWords = 0;
-    //sets file relative path to char pointer path
-    char *path = realpath(argv[1], NULL);
 
+    // open file for reading, to check if valid
     FILE *file;
     char c;
     char prevC;
@@ -143,13 +144,12 @@ int main (int argc, char** argv)
         printf("\n");
         return;
     } 
-
+    // if file not found, print error message
     if(file==NULL) 
     { 
-         printf("could not open file"); 
-         printf("\n");
-         return;
-
+        printf("could not open file"); 
+        printf("\n");
+        return;
     }
 
  
@@ -157,7 +157,7 @@ int main (int argc, char** argv)
     //pass byteSize into wordCount, this is used later for TerminationValue
     totalWords = wordcount(argv[1], byteSize);
     
-    //print out total number of words with file path
+    //print out total number of words with file name
     printf("\n");
     printf("There are " );
     printf ("%ld", totalWords);
