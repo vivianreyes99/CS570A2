@@ -35,57 +35,64 @@ representing the amount of progress that has been made
  
 void * progress_monitor(void * progStatus)
 {
-    // currentStatus/terminationValue * 100 = percent completed
-    // percent completed (in decimal) * 50 = num of progress markers printed
-    // need to find 1/50th of termination value, x
-    // everytime trackX increases to x amount then print "-"
-    // so we need to increment trackx everytime idk
- 
+
     //typecast the void pointer to a PROGRESS_STATUS pointer
     PROGRESS_STATUS *progStat = (PROGRESS_STATUS *) progStatus;
-    
-    //float percentComplete = (*progStat -> CurrentStatus)/(progStat -> TerminationValue) * 100;
-    float previousPercent = 0;
- 
+    printf("TerminationValue: ");
+    printf("%ld\n", (progStat -> TerminationValue)); 
+    printf("Current Status: ");
+    printf("%ld\n", (*progStat -> CurrentStatus));
+
     // while currstatus < term value, if percent complete increased by 2% of the term value, print a "-"
- 
-    
-    float increment = 0.02 * (progStat -> TerminationValue); // 1/50th of termination value, for test.txt, it is 1.44
+
+    // 1/50th of termination value, for test.txt, it is 1.44
+    long increment = 0.02 * (progStat -> TerminationValue);
+    long previousPercent = 0;
+
+    printf("Increment: ");
+    printf("%ld\n", increment); 
+
     int trackPlus = 0;
+
+    long percentComplete = (*progStat -> CurrentStatus)/(progStat -> TerminationValue)*100;
+    long difference = percentComplete - previousPercent;
+    long trackBar = difference / increment;
+    printf("Percent Complete: ");
+    printf("%ld\n", percentComplete); 
+    printf("Difference of current and pervious percent: ");
+    printf("%ld\n", difference); 
+    printf("TrackBar ");
+    printf("%ld\n", trackBar);
     // need tracking variable so that when it = x, then print bars
  
     //check current percent complete with last percent complete and from there determine how many
     //more dashes to print
     
     // when it has completed 1/50th of the task, it will print one "-""
-    while ((*progStat -> CurrentStatus) < (progStat -> TerminationValue))
+    while((*progStat -> CurrentStatus) < (progStat -> TerminationValue))
     {
-        float percentComplete = (*progStat -> CurrentStatus)/(progStat -> TerminationValue) * 100;
-        float difference = percentComplete - previousPercent;
-        
-        printf("%f\n", increment);
-        printf("%f\n", difference);
- 
+        long percentComplete = (*progStat -> CurrentStatus)/(progStat -> TerminationValue) * 100;
+        long difference = percentComplete - previousPercent;
+        long trackBar = difference / increment; //number of hyphens/bars to print
         if (difference >= increment) // when trackIncrement == 1/50 of termination value, it prints one "-"
         {
-            //float trackBar = difference / increment; // trackBar is the number of dashes to print
-            //for (int i = 0; i < trackBar; i++)
+            long trackBar = difference / increment; // trackBar is the number of dashes to print
+            for (int i = 0; i < trackBar; i++)
             {
+                printf("-");
+                fflush(stdout);
+                trackPlus++;
                 if (trackPlus == 9) // if it is the tenth "-" , print a "+"
                 {
                     printf("+");
                     fflush(stdout);
                     trackPlus = 0;
                 }
-                printf("-");
-                fflush(stdout);
-                trackPlus++;
             }
-            
         }
         previousPercent = percentComplete;
+
     }
-  
     pthread_exit(NULL);
 }
  
@@ -94,47 +101,29 @@ void * progress_monitor(void * progStatus)
 - simple program which given a filename determines the number of words in the file
 - returns a long integer with the number of words and takes a file descriptor or filename as input
 - wordcount will spawn a progress_monitor thread with a populated PROGRESS_STATUS structure as the argument
-- https://overiq.com/c-programming-101/pointers-as-structure-member-in-c/
-https://aticleworld.com/pointer-inside-a-structure/
 */
 long wordcount(char filename[], long byteSize)
 {
-    //example on how to initalize struct
-    /*struct Progress *PROGRESS_STATUS = malloc(sizeof(PROGRESS_STATUS));
-    PROGRESS_STATUS -> TerminationValue = byteSize;
-    PROGRESS_STATUS -> InitialValue = 0;
-    *PROGRESS_STATUS -> CurrentStatus = 0;
-    */
- 
+
     PROGRESS_STATUS *data = NULL;
     data = malloc(sizeof(PROGRESS_STATUS));
     // put info into struct 
     data->CurrentStatus = malloc(sizeof(data->CurrentStatus));
     data->TerminationValue = byteSize;
- 
+
     FILE *file;
     char c;
+    char prevC;
     //file = fopen(filename, "r");
     file = fopen(filename, "r");
  
     //thread id
     pthread_t thread_id;
  
-    //Create attributes
-    //pthread_attr_t attr;
-    //pthread_attr_init(&attr);
- 
-    //creates thread, Nulls are the defult, i think we pass the struct into one of the NULL arguments
-    //1st argument: pointer to thread1 which is set by this function
-    //2nd argument: specifies attributes, if val is NULL then defualt attributes shall be used
-    //3rd argument: name of function to be executed for the thread to be created
-    //4th argument: used to pass arguments to the function, progress_monitor (so probably the struct)
-    //join functions for threads is the equivalent to wait() for processes
- 
     long totalWords = 0;
     long currentBytes = 0;
  
-    pthread_create(&thread_id, NULL, progress_monitor, (void *) &data);
+    pthread_create(&thread_id, NULL, progress_monitor, (void *) data);
  
     if(filename==NULL) 
     { 
@@ -146,24 +135,34 @@ long wordcount(char filename[], long byteSize)
         c = fgetc(file);
         currentBytes++;
         *(data -> CurrentStatus) = currentBytes;
-        //fflush(stdout);
         
         while(c != EOF)
         {
-            if(c==' ' || c=='\n')
+            // if current char is a space, newline, or tab 
+            // and previous char was not also a space, newline, or tab
+            if ( (c ==' ' || c =='\n' || c == '\t') &&  prevC != ' ' && prevC != '\n' && prevC != '\t')
             {
                 totalWords++;
             }
             //one byte at a time
+            prevC = c;
             c = fgetc(file); 
-            //  
             currentBytes++;
-            data -> CurrentStatus = currentBytes;
+            *(data -> CurrentStatus) = currentBytes;
         }
+
+        if (c == EOF) // increment 
+            totalWords++;
     }
  
     pthread_join(thread_id, NULL);
     fclose(file);
+    
+    printf("total number of words: ");
+    fflush(stdout);
+    printf ("%ld\n", totalWords);
+    fflush(stdout);
+
     return totalWords;
 }
  
@@ -180,16 +179,6 @@ int main (int argc, char** argv)
     long words = wordcount(argv[1], size);
  
     // bigFile has 2191390 words. 13234244 bytes
- 
-    printf("total number of words: ");
-    printf ("%ld\n", words);
     return 0;
 }
- 
-//why is termination printing memory address (we think)
-//why is currentstatus printing 73 in progress_monitor 
-//seems like it doesnt reach progress_monitor function until end of wordcount function?)
-//recheck our math for printing
-//maybe figure out debugging
-//watch out for floats/long issue
 
