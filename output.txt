@@ -13,3 +13,5 @@ There are 1095695 words in /home/cs/faculty/bshen/cs570/a2/big.txt.
  128457 1095695 6488666 /home/cs/faculty/bshen/cs570/a2/big.txt
 [cssc3336@edoras a2]$ wordcount
 no file specified
+PS /Users/apple/CS570_Assignment2/CS570A2> .\wordcount sfdf
+could not open file

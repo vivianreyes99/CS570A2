@@ -99,6 +99,7 @@ void * progress_monitor(void * progStatus)
 */
 long wordcount(char filename[], long byteSize)
 {
+    // create and open file for reading
     PROGRESS_STATUS *data = NULL;
     data = malloc(sizeof(PROGRESS_STATUS));
     // put info into struct 
@@ -112,7 +113,7 @@ long wordcount(char filename[], long byteSize)
     //thread id
     pthread_t thread_id;
  
-    long totalWords = 0;
+    long totalWords = 0; // keeps count of the total words in file
     long currentBytes = 0;
  
     pthread_create(&thread_id, NULL, progress_monitor, (void *) data);
