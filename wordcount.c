@@ -19,26 +19,29 @@ void * progress_monitor(void * progStatus)
     float termination = progStat->TerminationValue - progStat->InitialValue;
     int currentPercent = 0;
     int perviousPercent = 0;
+    int difference = 0;
+    int trackPlus = 0;
 
-    while(currentPercent< 50)
+    while(currentPercent < 50)
     {
         currentPercent = (*(progStat -> CurrentStatus)/termination * 50);
+        difference = currentPercent - perviousPercent;
         if(currentPercent > perviousPercent)
         {
             perviousPercent = currentPercent;
-            printf("\r");
-            for(int i = 0; i < perviousPercent; i++)
+            for(int i = 0; i < difference; i++)
             {
-                if((i+1) % 10 == 0)
+               if (trackPlus == 9) 
                 {
                     printf("+");
                     fflush(stdout);
+                    trackPlus = 0;
                 }
-                else
-                {
+                else{
                     printf("-");
                     fflush(stdout);
-                }
+                    trackPlus++;
+                }               
             }
         }
     }
@@ -55,11 +58,6 @@ long wordcount(char filename[], long byteSize)
  
     long totalWords = 0;
     long currentBytes = 0;
-
-    if(filename==NULL) 
-    { 
-        printf("Could not open file"); 
-    } 
 
     PROGRESS_STATUS progStat;
     progStat.CurrentStatus = &currentBytes;
@@ -108,15 +106,25 @@ int main (int argc, char** argv)
     stat(argv[1], &buf);
     long size = buf.st_size;
     long totalWords = 0;
+    char *path = realpath(argv[1], NULL);
+
+    if(argv[1]==NULL) 
+    { 
+        printf("no file specified"); 
+        fflush(stdout);
+    } 
  
     totalWords = wordcount(argv[1], size);
     // bigFile has 2191390 words. 13234244 bytes
+    
     printf("\n");
     printf("There are ");
     fflush(stdout);
     printf ("%ld", totalWords);
     fflush(stdout);
     printf(" words in ");
+    fflush(stdout);
+    printf("%s", path);
     fflush(stdout);
     return 0;
 }

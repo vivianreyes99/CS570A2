@@ -1,0 +1,11 @@
+PS /Users/apple/CS570_Assignment2/CS570A2> .\wordcount bigFile.txt
+---------+---------+---------+---------+---------+
+There are 2191390 words in /Users/apple/CS570_Assignment2/CS570A2/bigFile.txt
+PS /Users/apple/CS570_Assignment2/CS570A2> wc bigFile.txt
+  256913 2191390 12977331 bigFile.txt
+PS /Users/apple/CS570_Assignment2/CS570A2> .\wordcount test.txt   
+---------+---------+---------+---------+---------+
+There are 17 words in /Users/apple/CS570_Assignment2/CS570A2/test.txt
+PS /Users/apple/CS570_Assignment2/CS570A2> wc test.txt
+       3      17      71 test.txt
+PS /Users/apple/CS570_Assignment2/CS570A2> 
